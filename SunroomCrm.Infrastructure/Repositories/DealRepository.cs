@@ -111,10 +111,13 @@ public class DealRepository : IDealRepository
 
     public async Task<Dictionary<DealStage, (int Count, decimal Total)>> GetStageStatsAsync(int userId)
     {
-        return await _db.Deals
+        var deals = await _db.Deals
             .Where(d => d.UserId == userId)
+            .ToListAsync();
+
+        return deals
             .GroupBy(d => d.Stage)
-            .ToDictionaryAsync(
+            .ToDictionary(
                 g => g.Key,
                 g => (g.Count(), g.Sum(d => d.Value)));
     }

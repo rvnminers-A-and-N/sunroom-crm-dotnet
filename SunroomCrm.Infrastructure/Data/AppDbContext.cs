@@ -62,7 +62,7 @@ public class AppDbContext : DbContext
             entity.HasOne(c => c.User)
                 .WithMany(u => u.Contacts)
                 .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(c => c.Company)
                 .WithMany(co => co.Contacts)
@@ -102,7 +102,7 @@ public class AppDbContext : DbContext
             entity.HasOne(d => d.User)
                 .WithMany(u => u.Deals)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(d => d.Contact)
                 .WithMany(c => c.Deals)
@@ -126,7 +126,7 @@ public class AppDbContext : DbContext
             entity.HasOne(a => a.User)
                 .WithMany(u => u.Activities)
                 .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(a => a.Contact)
                 .WithMany(c => c.Activities)
