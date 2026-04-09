@@ -52,3 +52,23 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Secrets / local config
+appsettings.Development.json
+appsettings.*.local.json
+docker-compose.override.yml
+
+# Frontend
+node_modules/
+dist/
+.next/
+.angular/
+.nuxt/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
