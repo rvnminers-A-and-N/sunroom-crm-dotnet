@@ -136,11 +136,17 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ── Database Migration & Seeding ──────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+// Skipped in the Test environment because integration tests swap in an
+// EF InMemory provider that does not support relational migrations and
+// each test arranges its own data via the factory.
+if (!app.Environment.IsEnvironment("Test"))
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-    await SeedData.SeedAsync(db);
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        await SeedData.SeedAsync(db);
+    }
 }
 
 app.Run();
