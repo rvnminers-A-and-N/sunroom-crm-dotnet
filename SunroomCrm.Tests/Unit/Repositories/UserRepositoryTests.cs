@@ -103,4 +103,91 @@ public class UserRepositoryTests
         Assert.Equal("Updated Name", result!.Name);
         Assert.Equal(UserRole.Admin, result.Role);
     }
+
+    [Fact]
+    public async Task GetByIdAsync_ReturnsNull_WhenUserDoesNotExist()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+
+        var result = await repo.GetByIdAsync(9999);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ReturnsUser_WhenExists()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+        var user = await repo.CreateAsync(TestDataFactory.CreateUser(name: "FindMe"));
+
+        var result = await repo.GetByIdAsync(user.Id);
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("FindMe");
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ReturnsTrue_WhenUserExists()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+        var user = await repo.CreateAsync(TestDataFactory.CreateUser());
+
+        var exists = await repo.ExistsAsync(user.Id);
+
+        exists.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ReturnsFalse_WhenUserDoesNotExist()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+
+        var exists = await repo.ExistsAsync(9999);
+
+        exists.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteAsync_DoesNothing_WhenUserDoesNotExist()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+        await repo.CreateAsync(TestDataFactory.CreateUser(email: "stays@example.com"));
+
+        // Should not throw and should not affect existing data.
+        await repo.DeleteAsync(9999);
+
+        var all = await repo.GetAllAsync();
+        all.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_OrdersByName_Alphabetically()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+        await repo.CreateAsync(TestDataFactory.CreateUser(name: "Charlie", email: "c@example.com"));
+        await repo.CreateAsync(TestDataFactory.CreateUser(name: "Alice", email: "a@example.com"));
+        await repo.CreateAsync(TestDataFactory.CreateUser(name: "Bob", email: "b@example.com"));
+
+        var result = await repo.GetAllAsync();
+
+        result.Should().HaveCount(3);
+        result.Select(u => u.Name).Should().ContainInOrder("Alice", "Bob", "Charlie");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsEmpty_WhenNoUsers()
+    {
+        using var db = TestDbContext.Create();
+        var repo = new UserRepository(db);
+
+        var result = await repo.GetAllAsync();
+
+        result.Should().BeEmpty();
+    }
 }
