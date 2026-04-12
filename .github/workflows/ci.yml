@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Minimum line coverage percentage required for the build to succeed.
+  # Bump this upward as the test suite grows toward 100% coverage.
+  MIN_LINE_COVERAGE: "80"
+
+jobs:
+  build-and-test:
+    name: Build, Test & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore SunroomCrm.sln
+
+      - name: Build
+        run: dotnet build SunroomCrm.sln --configuration Release --no-restore
+
+      - name: Test with coverage
+        run: |
+          dotnet test SunroomCrm.sln \
+            --configuration Release \
+            --no-build \
+            --logger "trx;LogFileName=test-results.trx" \
+            --logger "console;verbosity=normal" \
+            --results-directory ./TestResults \
+            --collect:"XPlat Code Coverage" \
+            --settings coverlet.runsettings
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate coverage report
+        run: |
+          reportgenerator \
+            "-reports:./TestResults/**/coverage.cobertura.xml" \
+            "-targetdir:./TestResults/CoverageReport" \
+            "-reporttypes:Html;MarkdownSummaryGithub;Cobertura;TextSummary"
+
+      - name: Display coverage summary
+        run: |
+          if [ -f ./TestResults/CoverageReport/Summary.txt ]; then
+            cat ./TestResults/CoverageReport/Summary.txt
+          fi
+
+      - name: Append coverage summary to job summary
+        if: always()
+        run: |
+          if [ -f ./TestResults/CoverageReport/SummaryGithub.md ]; then
+            cat ./TestResults/CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Enforce coverage gate
+        run: |
+          COBERTURA="./TestResults/CoverageReport/Cobertura.xml"
+          if [ ! -f "$COBERTURA" ]; then
+            echo "::error::Coverage report not found at $COBERTURA"
+            exit 1
+          fi
+          # Extract line-rate from the root <coverage line-rate="0.xxxx" ...> element.
+          LINE_RATE=$(grep -oP 'line-rate="\K[0-9.]+' "$COBERTURA" | head -1)
+          if [ -z "$LINE_RATE" ]; then
+            echo "::error::Could not parse line-rate from $COBERTURA"
+            exit 1
+          fi
+          PERCENT=$(awk "BEGIN { printf \"%.2f\", $LINE_RATE * 100 }")
+          THRESHOLD="${MIN_LINE_COVERAGE}"
+          echo "Line coverage: ${PERCENT}% (threshold: ${THRESHOLD}%)"
+          MEETS_THRESHOLD=$(awk "BEGIN { print ($PERCENT >= $THRESHOLD) ? 1 : 0 }")
+          if [ "$MEETS_THRESHOLD" -ne 1 ]; then
+            echo "::error::Line coverage ${PERCENT}% is below the required ${THRESHOLD}% threshold."
+            exit 1
+          fi
+          echo "::notice::Line coverage ${PERCENT}% meets the ${THRESHOLD}% threshold."
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults/**/*.trx
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./TestResults/CoverageReport
+          retention-days: 14
