@@ -10,10 +10,10 @@ services:
     volumes:
       - sqlserver-data:/var/opt/mssql
     healthcheck:
-      test: sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" -C || exit 1
+      test: grep -q "SQL Server is now ready for client connections" /var/opt/mssql/log/errorlog || exit 1
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 15
       start_period: 30s
     restart: unless-stopped
 
