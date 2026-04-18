@@ -14,21 +14,21 @@ public static class SeedData
         var admin = new User
         {
             Name = "Austin Sunroom",
-            Email = "admin@sunroomcrm.com",
+            Email = "admin@sunroomcrm.net",
             Password = BCrypt.Net.BCrypt.HashPassword("password123"),
             Role = UserRole.Admin
         };
         var manager = new User
         {
             Name = "Sarah Manager",
-            Email = "sarah@sunroomcrm.com",
+            Email = "sarah@sunroomcrm.net",
             Password = BCrypt.Net.BCrypt.HashPassword("password123"),
             Role = UserRole.Manager
         };
         var user = new User
         {
             Name = "Jake Sales",
-            Email = "jake@sunroomcrm.com",
+            Email = "jake@sunroomcrm.net",
             Password = BCrypt.Net.BCrypt.HashPassword("password123"),
             Role = UserRole.User
         };

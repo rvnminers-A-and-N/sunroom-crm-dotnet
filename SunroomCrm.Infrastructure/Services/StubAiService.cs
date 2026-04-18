@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using SunroomCrm.Core.DTOs.Activities;
 using SunroomCrm.Core.DTOs.AI;
 using SunroomCrm.Core.DTOs.Contacts;
@@ -29,6 +30,43 @@ public class StubAiService : IAiService
             5. Identify and engage the final decision maker to accelerate approval
             """;
         return Task.FromResult(insights);
+    }
+
+    public async IAsyncEnumerable<string> SummarizeStreamAsync(
+        string text, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var summary = await SummarizeAsync(text);
+        foreach (var word in summary.Split(' '))
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return word + " ";
+            await Task.Delay(20, ct);
+        }
+    }
+
+    public async IAsyncEnumerable<string> GenerateDealInsightsStreamAsync(
+        Deal deal, List<Activity> history, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var insights = await GenerateDealInsightsAsync(deal, history);
+        foreach (var word in insights.Split(' '))
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return word + " ";
+            await Task.Delay(20, ct);
+        }
+    }
+
+    public async IAsyncEnumerable<string> SmartSearchStreamAsync(
+        SmartSearchRequest request, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var response = $"Searching for contacts and activities related to \"{request.Query}\". " +
+                       "Found several matching records across your CRM data.";
+        foreach (var word in response.Split(' '))
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return word + " ";
+            await Task.Delay(20, ct);
+        }
     }
 
     public Task<SmartSearchResponse> SmartSearchAsync(

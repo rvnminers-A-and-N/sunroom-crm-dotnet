@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SunroomCrm.Core.DTOs.AI;
@@ -40,6 +41,12 @@ public class AiController : ControllerBase
         return Ok(new SummarizeResponse { Summary = summary });
     }
 
+    [HttpPost("summarize/stream")]
+    public async Task SummarizeStream([FromBody] SummarizeRequest request)
+    {
+        await WriteSSEStream(_ai.SummarizeStreamAsync(request.Text, HttpContext.RequestAborted));
+    }
+
     [HttpPost("deal-insights/{dealId}")]
     public async Task<IActionResult> DealInsights(int dealId)
     {
@@ -65,6 +72,26 @@ public class AiController : ControllerBase
         });
     }
 
+    [HttpPost("deal-insights/{dealId}/stream")]
+    public async Task DealInsightsStream(int dealId)
+    {
+        var deal = await _deals.GetByIdAsync(dealId);
+        if (deal == null)
+        {
+            Response.StatusCode = 404;
+            return;
+        }
+
+        var history = await _activities.GetForDealAsync(dealId);
+        await WriteSSEStream(_ai.GenerateDealInsightsStreamAsync(deal, history, HttpContext.RequestAborted));
+    }
+
+    [HttpPost("search/stream")]
+    public async Task SmartSearchStream([FromBody] SmartSearchRequest request)
+    {
+        await WriteSSEStream(_ai.SmartSearchStreamAsync(request, HttpContext.RequestAborted));
+    }
+
     [HttpPost("search")]
     public async Task<IActionResult> SmartSearch([FromBody] SmartSearchRequest request)
     {
@@ -78,6 +105,24 @@ public class AiController : ControllerBase
 
         var result = await _ai.SmartSearchAsync(request.Query, contacts, activities);
         return Ok(result);
+    }
+
+    private async Task WriteSSEStream(IAsyncEnumerable<string> tokens)
+    {
+        Response.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers["X-Accel-Buffering"] = "no";
+        Response.Headers.Connection = "keep-alive";
+
+        await foreach (var token in tokens)
+        {
+            var data = JsonSerializer.Serialize(new { token });
+            await Response.WriteAsync($"data: {data}\n\n", HttpContext.RequestAborted);
+            await Response.Body.FlushAsync(HttpContext.RequestAborted);
+        }
+
+        await Response.WriteAsync("data: [DONE]\n\n", HttpContext.RequestAborted);
+        await Response.Body.FlushAsync(HttpContext.RequestAborted);
     }
 
     private int GetUserId()

@@ -31,7 +31,10 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // AI Service: use Ollama if configured, otherwise use Stub
 if (builder.Configuration.GetValue<bool>("Ollama:Enabled"))
 {
-    builder.Services.AddHttpClient<IAiService, OllamaAiService>();
+    builder.Services.AddHttpClient<IAiService, OllamaAiService>(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(5);
+    });
 }
 else
 {
@@ -65,7 +68,14 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:3000",  // React
                 "http://localhost:4200",  // Angular
-                "http://localhost:5173"   // Vue
+                "http://localhost:5173",  // Vue
+                "https://react.sunroomcrm.net",
+                "https://vue.sunroomcrm.net",
+                "https://angular.sunroomcrm.net",
+                "https://blazor.sunroomcrm.net",
+                "https://laravel.sunroomcrm.net",
+                "https://sunroomcrm.net",
+                "https://www.sunroomcrm.net"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
