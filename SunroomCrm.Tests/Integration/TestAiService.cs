@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using SunroomCrm.Core.DTOs.Activities;
 using SunroomCrm.Core.DTOs.AI;
 using SunroomCrm.Core.DTOs.Contacts;
@@ -65,5 +66,26 @@ public class TestAiService : IAiService
                 CreatedAt = a.CreatedAt
             }).ToList()
         });
+    }
+
+    public async IAsyncEnumerable<string> SummarizeStreamAsync(
+        string text, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        yield return SummaryText;
+        await Task.CompletedTask;
+    }
+
+    public async IAsyncEnumerable<string> GenerateDealInsightsStreamAsync(
+        Deal deal, List<Activity> history, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        yield return InsightText;
+        await Task.CompletedTask;
+    }
+
+    public async IAsyncEnumerable<string> SmartSearchStreamAsync(
+        SmartSearchRequest request, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        yield return InterpretationText;
+        await Task.CompletedTask;
     }
 }
