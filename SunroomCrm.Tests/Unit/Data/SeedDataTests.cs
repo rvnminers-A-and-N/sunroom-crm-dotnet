@@ -56,7 +56,7 @@ public class SeedDataTests
 
         await SeedData.SeedAsync(db);
 
-        var admin = db.Users.SingleOrDefault(u => u.Email == "admin@sunroomcrm.com");
+        var admin = db.Users.SingleOrDefault(u => u.Email == "admin@sunroomcrm.net");
         admin.Should().NotBeNull();
         admin!.Role.Should().Be(UserRole.Admin);
     }
@@ -68,7 +68,7 @@ public class SeedDataTests
 
         await SeedData.SeedAsync(db);
 
-        var manager = db.Users.SingleOrDefault(u => u.Email == "sarah@sunroomcrm.com");
+        var manager = db.Users.SingleOrDefault(u => u.Email == "sarah@sunroomcrm.net");
         manager.Should().NotBeNull();
         manager!.Role.Should().Be(UserRole.Manager);
     }
@@ -80,7 +80,7 @@ public class SeedDataTests
 
         await SeedData.SeedAsync(db);
 
-        var user = db.Users.SingleOrDefault(u => u.Email == "jake@sunroomcrm.com");
+        var user = db.Users.SingleOrDefault(u => u.Email == "jake@sunroomcrm.net");
         user.Should().NotBeNull();
         user!.Role.Should().Be(UserRole.User);
     }
@@ -92,7 +92,7 @@ public class SeedDataTests
 
         await SeedData.SeedAsync(db);
 
-        var admin = db.Users.Single(u => u.Email == "admin@sunroomcrm.com");
+        var admin = db.Users.Single(u => u.Email == "admin@sunroomcrm.net");
         admin.Password.Should().NotBe("password123");
         BCrypt.Net.BCrypt.Verify("password123", admin.Password).Should().BeTrue();
     }

@@ -85,7 +85,7 @@ Configure your connection string in `SunroomCrm.Api/appsettings.Development.json
 The seed data creates an admin user you can log in with:
 
 ```
-Email:    admin@sunroomcrm.com
+Email:    admin@sunroomcrm.net
 Password: password123
 ```
 
